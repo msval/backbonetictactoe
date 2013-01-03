@@ -1,0 +1,27 @@
+.tictactoecontainer {
+	width: 9em;
+	margin: 5em auto;
+	display: table;
+}
+
+.tictacfield {
+	display:inline-block;
+	font-size: 2.5em;
+	width: 1em;
+	height: 0.9em;
+	border: 0.15em solid;
+	line-height: 0.9em;
+	text-align: center;
+	margin: -0.01em -0.1em;
+	padding: 0;
+	color: #000;
+}
+
+button {
+	margin-top: 1em;
+}
+
+a, a:hover, a:visited {
+	color: #000;
+}
+

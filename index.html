@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <meta charset="utf-8"/>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+        <title></title>
+        <meta name="description" content=""/>
+        <meta name="viewport" content="width=device-width"/>
+        
+        <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.1.1/css/bootstrap.min.css">
+        <link rel="stylesheet" href="styles/index.css"/>
+    </head>
+    <body>
+
+    <div role="main" id="main" class="container">
+    </div>
+
+    <!--[if lt IE 7]>
+        <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
+    <![endif]-->
+
+    <script type="text/template" id="tic-template">
+            <div class="tictactoecontainer">
+                <% _.each(board, function (elem, ind) { %>
+                    <% if (elem != '' || gameOver) {%>
+                        <div class="tictacfield"><%=elem != '' ? elem : '&nbsp;'%></div>
+                    <% } else { %>
+                        <a href="#/play/<%=ind%>"><div class="tictacfield">&nbsp;</div></a>
+                    <%};%>
+                <% });%>
+               <button type="button" class="btn btn-primary resetButton">Play again</button>
+               <%=gameOver ? '<h3>Game Over</h3>' : ''%>
+            </div>
+    </script>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.3/underscore-min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/0.9.2/backbone-min.js"></script>
+
+    <script type="text/javascript">
+
+        var TicTacToeExpert = {} || TicTacToeExpert;
+
+        TicTacToeExpert.getBestFreeField = function (sign, board) {
+            var emptySign = '';
+            var moveLines = [[0, 4, 8], [2, 4, 6], [0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8]];
+            var moveValue = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+            var mySignGood = [];
+            var oppSignGood = [];
+            var returnGameState= {};
+
+            for (var i = 0; i < moveLines.length; i++) {
+                var mySignCnt= 0, oppSignCnt = 0;
+                var empty = -1;
+                for (var j = 0; j < moveLines[i].length; j++) {
+                    if (board[moveLines[i][j]] == emptySign) {
+                        moveValue[moveLines[i][j]] += 1;
+                        empty = moveLines[i][j];
+                    } else if (board[moveLines[i][j]] == sign) {
+                        mySignCnt += 1;
+                    } else {
+                        oppSignCnt += 1;
+                    }
+                }
+
+                if (empty > -1) {
+                    if (mySignCnt == 2) {
+                        mySignGood.push(empty);
+                    } else if (oppSignCnt == 2) {
+                        oppSignGood.push(empty);
+                    }
+                }
+                if (oppSignCnt == 3) {
+                        returnGameState.gameOver = true;
+                }
+            }
+
+            if (mySignGood.length > 0) {
+                returnGameState.gameOver = true;
+                returnGameState.move = mySignGood.pop();
+                return returnGameState;
+            }
+
+            if (oppSignGood.length > 0) {
+                returnGameState.move = oppSignGood.pop();
+                return returnGameState;
+            }
+
+            returnGameState.move = moveValue.indexOf(Math.max.apply(Math, moveValue));
+
+            return returnGameState;
+        }
+
+        var TicTacToeView = Backbone.View.extend({
+            el: '#main',
+            render: function (options) {
+                var gameOver = false;
+                if (options.id) {
+                    this.board[options.id] = 'X';
+                    var bestField = TicTacToeExpert.getBestFreeField('O', this.board);
+                    if (this.board[bestField.move] == '') {
+                        this.board[bestField.move] = 'O';
+                    }
+                    if (bestField.gameOver) {
+                        gameOver = true;
+                    }
+                } else {
+                    this.emptyBoard(); 
+                }
+                var template = _.template($('#tic-template').html(), {
+                    board: this.board, 
+                    gameOver: gameOver
+                });
+                this.$el.html(template);
+            },
+            events: {
+                'click .resetButton': 'resetBoard'
+            },
+            resetBoard : function (ev) {
+                this.emptyBoard();
+                this.render({id: null});
+                router.navigate('');
+            },
+            emptyBoard : function () {
+                this.board = ['', '', '', '', '', '', '', '', ''];
+            }
+        });
+
+        var ticTacToeView = new TicTacToeView();
+
+        var Router = Backbone.Router.extend({
+            routes: {
+                '': 'show',
+                'play/:id' : 'play'
+            }
+        });
+
+        var router = new Router();
+
+        router.on('route:show', function () {
+            ticTacToeView.render({id: null});
+        });
+
+        router.on('route:play', function (id) {
+            ticTacToeView.render({id: id});
+            router.navigate('');
+        });
+
+        Backbone.history.start();
+
+    </script>
+
+    </body>
+</html>
