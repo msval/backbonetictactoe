@@ -31,7 +31,8 @@
                         <a href="#/play/<%=ind%>"><div class="tictacfield">&nbsp;</div></a>
                     <%};%>
                 <% });%>
-               <button type="button" class="btn btn-primary resetButton">Play again</button>
+                <button type="button" class="btn btn-primary resetButton">My move 1st</button>
+               <button type="button" class="btn btn-success resetWithAIFirst">A.I. move 1st</button>
                <%=gameOver ? '<h3>Game Over</h3>' : ''%>
             </div>
     </script>
@@ -96,36 +97,51 @@
 
         var TicTacToeView = Backbone.View.extend({
             el: '#main',
-            render: function (options) {
-                var gameOver = false;
-                if (options.id) {
-                    this.board[options.id] = 'X';
-                    var bestField = TicTacToeExpert.getBestFreeField('O', this.board);
-                    if (this.board[bestField.move] == '') {
-                        this.board[bestField.move] = 'O';
-                    }
-                    if (bestField.gameOver) {
-                        gameOver = true;
-                    }
-                } else {
-                    this.emptyBoard(); 
+            render: function () {
+                if (!this.board) {
+                    this.emptyBoard();
                 }
                 var template = _.template($('#tic-template').html(), {
                     board: this.board, 
-                    gameOver: gameOver
+                    gameOver: this.gameOver
                 });
                 this.$el.html(template);
+                router.navigate('');
             },
             events: {
-                'click .resetButton': 'resetBoard'
+                'click .resetButton': 'resetBoard',
+                'click .resetWithAIFirst': 'resetBoardAIFirst'
             },
             resetBoard : function (ev) {
                 this.emptyBoard();
-                this.render({id: null});
-                router.navigate('');
+                this.render();
+            },
+            resetBoardAIFirst: function (ev) {
+                    this.emptyBoard();
+                    this.playAIMove();
+                    this.render();
             },
             emptyBoard : function () {
                 this.board = ['', '', '', '', '', '', '', '', ''];
+                this.gameOver = false;
+            },
+            playMove : function (field) {
+                if (field && field.id) {
+                    this.board[field.id] = 'X';
+
+                    this.playAIMove();
+
+                    this.render();
+                }
+            },
+            playAIMove : function () {
+                var bestField = TicTacToeExpert.getBestFreeField('O', this.board);
+                if (this.board[bestField.move] == '') {
+                    this.board[bestField.move] = 'O';
+                }
+                if (bestField.gameOver) {
+                    this.gameOver = true;
+                }
             }
         });
 
@@ -141,12 +157,11 @@
         var router = new Router();
 
         router.on('route:show', function () {
-            ticTacToeView.render({id: null});
+            ticTacToeView.render();
         });
 
         router.on('route:play', function (id) {
-            ticTacToeView.render({id: id});
-            router.navigate('');
+            ticTacToeView.playMove({id: id}); 
         });
 
         Backbone.history.start();
